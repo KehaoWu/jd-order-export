@@ -56,15 +56,18 @@ var filename = function(){
   var hour = date.getHours()
   var minute = date.getMinutes()
   var second = date.getSeconds()
-  var filename = "jd.com.orders." + year + month + day + hour + minute + second + ".xlsx"
-  return(filename)
+  var title = $(".time-txt").html()
+  var title = ""
+  var filename = "jd.com.orders." + title + "." + year + month + day + hour + minute + second + ".xlsx"
+  return filename
 }
 
 var save = function(dataxls){
     var wb = new Workbook()
-    wb.SheetNames.push("订单")
-    wb.Sheets["订单"] = sheet_from_array_of_arrays(dataxls)
-    wb.SheetNames.push("Raw")
+    var title = $(".time-txt").html()
+    var title = "a"
+    wb.SheetNames.push(title)
+    wb.Sheets[title] = sheet_from_array_of_arrays(dataxls)
 
     var wbout = XLSX.write(wb, {bookType:'xlsx', bookSST:true, type: 'binary'})
     saveAs(new Blob([s2ab(wbout)],{type:"application/octet-stream"}), filename())
@@ -73,6 +76,7 @@ var save = function(dataxls){
 var checkFirstPage = function(){
     if($(".prev-disabled").html() != undefined){
         window.localStorage.clear('data');
+        bindButton();
         return true
     }else{
         return false
@@ -87,10 +91,16 @@ var checkLastPage = function(){
     } 
 }
 
-var retrieve = function(){
+
+
+var viewItem = function(urf){
+    window.localStorage.setItem("lock", "true")
+    window.open(nextUrl)
+}
+
+var _retrieve = function(){
     const tbodies = $(".td-void > tbody")
     var items = []
-    var dataxls = []
     var date, dealno, status, amount, cosignee, pname, pnumber
     tbodies.each(function(value, item){
         date = $(item).find('.dealtime').html()
@@ -99,9 +109,14 @@ var retrieve = function(){
         amount = $(item).find('.amount > span').html()
         cosignee = $(item).find('.txt').html()
         pname = $(item).find('.p-name > a').html()
-        console.log(pname)
+        url = $(item).find('.p-name > a').attr("href")
         pnumber = $(item).find('.goods-number').html()
         if(pname != undefined){
+            /*
+            setTimeout(function(){
+                window.open(url)
+            }, 1000)
+            */
             items.push({
                 date: date,
                 dealno: dealno,
@@ -110,15 +125,15 @@ var retrieve = function(){
                 cosignee: cosignee,
                 pname: pname,
                 pnumber: pnumber.replace('x', '').replace(/\s*/,''),
-                item: [date, pname, pnumber, dealno, cosignee, amount, status]
+                url: url,
+                item: [date, pname, pnumber.replace('x', '').replace(/\s*/,''), 
+                    dealno, cosignee, amount.replace('总额 ¥', ''), status.replace(/\s*/,''), url]
             })
-            dataxls.push([date, pname, pnumber.replace('x', '').replace(/\s*/,''), 
-                    dealno, cosignee, amount.replace('总额 ¥', ''), status.replace(/\s*/,'')])
         }
         pname = undefined
     })
     var data = loadData();
-    data[getCurrentPage()] = dataxls
+    data[getCurrentPage()] = items
     window.localStorage.setItem("data", JSON.stringify(data))
 }
 
@@ -131,7 +146,55 @@ var loadData = function(){
     }
 }
 
+var fetchItem = function(url){
+    var items = JSON.parse(window.localStorage.getItem('items'));
+    if(items[url] == undefined){
+        return undefined
+    }else{
+        const category = items[url]['category'];
+        const visit = items[url]['visit'];
+        if(visit >= 1){
+            return category
+        }else{
+            window.open(url)
+            return undefined
+        }
+    }
+}
+
+
+
+var patch = function(){
+      var items = JSON.parse(window.localStorage.getItem('data'));
+      const keys = Object.keys(items)
+      for(var i = 0; i < keys.length; i++){
+          for(var j = 0; j < items[keys[i]].length; j++){
+              const url = items[keys[i]][j]['url']
+              $.ajax({
+                url: url,
+                type: 'get',
+                success: function(data){
+                    var _items = JSON.parse(window.localStorage.getItem('data'));
+                    const keys = Object.keys(_items);
+                    console.log(keys)
+                    console.log("i:" + i + ", j:" + j)
+                    const category = $(data).find(".breadcrumb > strong > a").html()
+                    console.log(category)
+                    console.log(_items[keys[i]])
+                    if(_items[keys[i]][j]['item'].length < 8){
+                        _items[keys[i]][j]['item'].push(category)
+                        window.localStorage.setItem('data', JSON.stringify(_items))
+                    }
+                },
+                async: false
+              })
+              
+          }
+      }   
+}
+
 var saveData = function(){
+    patch()
     const data = window.localStorage.getItem('data');
     if (data != undefined){
         const xlsxdata = JSON.parse(data);
@@ -139,8 +202,13 @@ var saveData = function(){
         if(validator(keys)){
             var items = [];
             for(var i = 0; i < keys.length; i++){
-                items = items.concat(xlsxdata[keys[i]])
+                var _items = [];
+                for(var j = 0; j < xlsxdata[keys[i]].length; j++){
+                    _items.push(xlsxdata[keys[i]][j]['item'])
+                }
+                items = items.concat(_items)
             }
+            console.log(items)
             save(items)
         }
     }
@@ -162,20 +230,35 @@ var findNextPage = function(){
     return $('.current').next().attr("href")
 }
 
+var bindButton = function(){
+    const btn = $("<button>").html("导出报告").css("margin-right", "16px").click(retrieve);
+    $(".order-detail-txt").before(btn);
+}
+
+var retrieve = function(){
+    const lastPage = checkLastPage();
+    console.log("This is last page or not? " + lastPage)
+    _retrieve();
+    if (lastPage == false){
+        const nextUrl = findNextPage()
+        console.log("Next page is " + nextUrl)
+        setTimeout(function(){
+            window.location.replace(nextUrl)
+        }, 1000)
+        
+    } else {
+        saveData();
+    }
+}
+
 $(document).ready(function(){
     /*
         翻页，从 prev-disabled 一直翻到 next-disabled
     */
+    
     const firstPage = checkFirstPage();
-    const lastPage = checkLastPage();
     console.log("This is first page or not? " + firstPage)
-    console.log("This is last page or not? " + lastPage)
-    retrieve();
-    if (lastPage == false){
-        const nextUrl = findNextPage()
-        console.log("Next page is " + nextUrl)
-        window.open(nextUrl)
-    } else {
-        saveData();
+    if(!firstPage){
+        retrieve()
     }
 })

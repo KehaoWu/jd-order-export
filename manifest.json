@@ -1,27 +1,34 @@
 {
-	"manifest_version": 2,
-	"name": "jd.com order exporter",
-	"version": "1.0",
-	"description": "jd.com order exporter",
-	"icons": {
+    "manifest_version": 2,
+    "name": "jd.com order exporter",
+    "version": "1.0",
+    "description": "jd.com order exporter",
+    "icons": {
         "16": "images/icon16.png",
+        "24": "images/icon24.png",
+        "32": "images/icon32.png",
         "48": "images/icon48.png",
-        "128": "images/icon128.png"
+        "64": "images/icon64.png",
+        "72": "images/icon72.png"
     },
-	"browser_action": {
-		"default_icon": {
-            "19": "images/icon19.png",
-            "38": "images/icon38.png"
+    "browser_action": {
+        "default_icon": {
+            "16": "images/icon16.png",
+            "24": "images/icon24.png"
         },
-		"default_title": "stock helper"
-	},
-	"permissions": [
+        "default_title": "stock helper"
+    },
+    "permissions": [
         "tabs", "https://www.jd.com/*", "https://order.jd.com/center/list.action"
     ],
     "content_scripts": [
         {
             "matches": ["https://www.jd.com/*","https://order.jd.com/center/list.action*"],
             "js": ["js/jquery.min.js","js/xlsx.core.min.js","js/Blob.js","js/FileSaver.js","main.js"]            
+        },
+        {
+            "matches": ["https://item.jd.com/*"],
+            "js": ["js/jquery.min.js","item.js"]
         }
     ]
 }
