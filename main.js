@@ -19,7 +19,7 @@ function datenum(v, date1904) {
   var epoch = Date.parse(v);
   return (epoch - new Date(Date.UTC(1899, 11, 30))) / (24 * 60 * 60 * 1000);
 }
- 
+
 function sheet_from_array_of_arrays(data, opts) {
   var ws = {};
   var range = {s: {c:10000000, r:10000000}, e: {c:0, r:0 }};
@@ -32,7 +32,7 @@ function sheet_from_array_of_arrays(data, opts) {
       var cell = {v: data[R][C] };
       if(cell.v == null) continue;
       var cell_ref = XLSX.utils.encode_cell({c:C,r:R});
-      
+
       if(typeof cell.v === 'number') cell.t = 'n';
       else if(typeof cell.v === 'boolean') cell.t = 'b';
       else if(cell.v instanceof Date) {
@@ -40,7 +40,7 @@ function sheet_from_array_of_arrays(data, opts) {
         cell.v = datenum(cell.v);
       }
       else cell.t = 's';
-      
+
       ws[cell_ref] = cell;
     }
   }
@@ -88,7 +88,7 @@ var checkLastPage = function(){
         return true
     }else{
         return false
-    } 
+    }
 }
 
 
@@ -126,7 +126,7 @@ var _retrieve = function(){
                 pname: pname,
                 pnumber: pnumber.replace('x', '').replace(/\s*/,''),
                 url: url,
-                item: [date, pname, pnumber.replace('x', '').replace(/\s*/,''), 
+                item: [date, pname, pnumber.replace('x', '').replace(/\s*/,''),
                     dealno, cosignee, amount.replace('总额 ¥', ''), status.replace(/\s*/,''), url]
             })
         }
@@ -188,13 +188,13 @@ var patch = function(){
                 },
                 async: false
               })
-              
+
           }
-      }   
+      }
 }
 
 var saveData = function(){
-    patch()
+    //patch()
     const data = window.localStorage.getItem('data');
     if (data != undefined){
         const xlsxdata = JSON.parse(data);
@@ -245,7 +245,7 @@ var retrieve = function(){
         setTimeout(function(){
             window.location.replace(nextUrl)
         }, 1000)
-        
+
     } else {
         saveData();
     }
@@ -255,7 +255,7 @@ $(document).ready(function(){
     /*
         翻页，从 prev-disabled 一直翻到 next-disabled
     */
-    
+
     const firstPage = checkFirstPage();
     console.log("This is first page or not? " + firstPage)
     if(!firstPage){
