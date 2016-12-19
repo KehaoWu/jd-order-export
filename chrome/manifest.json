@@ -16,7 +16,7 @@
             "16": "images/icon16.png",
             "24": "images/icon24.png"
         },
-        "default_title": "stock helper"
+        "default_title": "京东订单批量导出"
     },
     "permissions": [
         "tabs", "https://www.jd.com/*", "https://order.jd.com/center/list.action"
